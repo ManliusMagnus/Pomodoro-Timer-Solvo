@@ -1,457 +1,474 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Deep Work Pomodoro Timer</title>
-  <style>
-    :root {
-      --text-color: #ffffff;
-      --accent-color: #00F0FF;
-      --gold-color: #D4AF37;
-    }
-    
-    @media (prefers-color-scheme: light) {
-      :root {
-        --text-color: #000000;
-      }
-    }
-    
-    body {
-      background: black;
-      color: var(--text-color);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      box-sizing: border-box;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deep Work Pomodoro Timer</title>
+<style>
+:root {
+  --text-color: #ffffff;
+  --accent-color: #00F0FF;
+  --gold-color: #D4AF37;
+}
 
-    .wrapper {
-      background: black;
-      border: 2px solid var(--gold-color);
-      border-radius: 20px;
-      padding: 30px;
-      width: 330px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 15px rgba(212, 175, 55, 0.1);
-      box-sizing: border-box;
-    }
+@media (prefers-color-scheme: light) {
+  :root {
+    --text-color: #000000;
+  }
+}
 
-    .modes-container {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      width: 100%;
-      margin-bottom: 25px;
-    }
+body {
+  background: black;
+  color: var(--text-color);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  box-sizing: border-box;
+}
 
-    .mode-btn {
-      flex: 1;
-      font-size: 0.72rem;
-      padding: 8px 4px;
-      border: 1px solid var(--gold-color);
-      border-radius: 30px;
-      background: transparent;
-      color: var(--text-color);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      font-weight: 600;
-    }
+.wrapper {
+  background: black;
+  border: 2px solid var(--gold-color);
+  border-radius: 20px;
+  padding: 30px;
+  width: 330px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 15px rgba(212, 175, 55, 0.1);
+  box-sizing: border-box;
+}
 
-    .mode-btn:hover {
-      background: rgba(212, 175, 55, 0.15);
-    }
+.modes-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 25px;
+}
 
-    .mode-btn.active {
-      border-color: var(--accent-color);
-      color: var(--accent-color);
-      box-shadow: 0 0 12px var(--accent-color);
-    }
+.mode-btn {
+  flex: 1;
+  font-size: 0.72rem;
+  padding: 8px 4px;
+  border: 1px solid var(--gold-color);
+  border-radius: 30px;
+  background: transparent;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 600;
+}
 
-    .timer-container {
-      position: relative;
-      width: 200px;
-      height: 200px;
-      margin-bottom: 25px;
-    }
+.mode-btn:hover {
+  background: rgba(212, 175, 55, 0.15);
+}
 
-    .progress-ring {
-      width: 100%;
-      height: 100%;
-    }
+.mode-btn.active {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  box-shadow: 0 0 12px var(--accent-color);
+}
 
-    .progress-ring__circle-bg {
-      fill: transparent;
-      stroke: rgba(255, 255, 255, 0.04);
-      stroke-width: 2;
-    }
+.timer-container {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin-bottom: 25px;
+}
 
-    .progress-ring__circle {
-      fill: transparent;
-      stroke: var(--accent-color);
-      stroke-width: 2.5;
-      stroke-linecap: round;
-      transform: rotate(-90deg);
-      transform-origin: 50% 50%;
-      transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
-    }
+.progress-ring {
+  width: 100%;
+  height: 100%;
+}
 
-    .progress-ring__circle.no-transition {
-      transition: none !important;
-    }
+.progress-ring__circle-bg {
+  fill: transparent;
+  stroke: rgba(255, 255, 255, 0.04);
+  stroke-width: 2;
+}
 
-    .timer-display {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 2.6rem;
-      font-weight: 200;
-      letter-spacing: 1.5px;
-      color: var(--text-color);
-    }
+.progress-ring__circle {
+  fill: transparent;
+  stroke: var(--accent-color);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+}
 
-    .controls {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      margin-bottom: 25px;
-    }
+.progress-ring__circle.no-transition {
+  transition: none !important;
+}
 
-    .control-btn {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      border: 1px solid var(--gold-color);
-      background: transparent;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-color);
-      transition: all 0.3s ease;
-    }
+.timer-display {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2.6rem;
+  font-weight: 200;
+  letter-spacing: 1.5px;
+  color: var(--text-color);
+}
 
-    .control-btn:hover {
-      background: rgba(212, 175, 55, 0.15);
-      transform: scale(1.05);
-    }
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 25px;
+}
 
-    .control-btn svg {
-      fill: currentColor;
-      width: 16px;
-      height: 16px;
-    }
+.control-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--gold-color);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-color);
+  transition: all 0.3s ease;
+}
 
-    .stats-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-size: 0.75rem;
-    }
+.control-btn:hover {
+  background: rgba(212, 175, 55, 0.15);
+  transform: scale(1.05);
+}
 
-    .stats-title {
-      font-size: 0.7rem;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-      opacity: 0.5;
-    }
+.control-btn svg {
+  fill: currentColor;
+  width: 16px;
+  height: 16px;
+}
 
-    .session-indicator {
-      display: inline-flex;
-      align-items: center;
-      font-weight: bold;
-      font-size: 1.1rem;
-      color: var(--accent-color);
-      text-shadow: 0 0 6px var(--accent-color);
-      transition: color 0.3s ease, text-shadow 0.3s ease;
-    }
-  </style>
+.stats-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.75rem;
+}
+
+.stats-title {
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  opacity: 0.5;
+}
+
+.session-indicator {
+  display: inline-flex;
+  align-items: center;
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: var(--accent-color);
+  text-shadow: 0 0 6px var(--accent-color);
+  transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+</style>
 </head>
 <body>
 
-  <div class="wrapper">
-    <div class="modes-container">
-      <button class="mode-btn active" data-mode="studio">Studio</button>
-      <button class="mode-btn" data-mode="shortBreak">Pausa B.</button>
-      <button class="mode-btn" data-mode="longBreak">Pausa L.</button>
-    </div>
-
-    <div class="timer-container">
-      <svg class="progress-ring" viewBox="0 0 200 200">
-        <circle class="progress-ring__circle-bg" cx="100" cy="100" r="85"></circle>
-        <circle class="progress-ring__circle" cx="100" cy="100" r="85"></circle>
-      </svg>
-      <div class="timer-display" id="timer-display">25:00</div>
-    </div>
-
-    <div class="controls">
-      <button class="control-btn" id="btn-play" title="Play">
-        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-      </button>
-      <button class="control-btn" id="btn-pause" title="Pausa">
-        <svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-      </button>
-      <button class="control-btn" id="btn-reset" title="Reset">
-        <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
-      </button>
-    </div>
-
-    <div class="stats-container">
-      <div class="stats-title">Sessioni Completate Oggi</div>
-      <div class="session-indicator" id="indicator-span">
-        <span id="session-count">0</span>
-      </div>
-    </div>
+<div class="wrapper">
+  <div class="modes-container">
+    <button class="mode-btn active" data-mode="studio">Studio</button>
+    <button class="mode-btn" data-mode="shortBreak">Pausa B.</button>
+    <button class="mode-btn" data-mode="longBreak">Pausa L.</button>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
-    import { getFirestore, collection, addDoc, query, where, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  <div class="timer-container">
+    <svg class="progress-ring" viewBox="0 0 200 200">
+      <circle class="progress-ring__circle-bg" cx="100" cy="100" r="85"></circle>
+      <circle class="progress-ring__circle" cx="100" cy="100" r="85"></circle>
+    </svg>
+    <div class="timer-display" id="timer-display">25:00</div>
+  </div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBXt2kDZD8ydWPRBSM9v5XK759Et0FjewY",
-      authDomain: "media-e-proiezione-laurea.firebaseapp.com",
-      databaseURL: "https://media-e-proiezione-laurea-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "media-e-proiezione-laurea",
-      storageBucket: "media-e-proiezione-laurea.firebasestorage.app",
-      messagingSenderId: "887459538992",
-      appId: "1:887459538992:web:0147adda8f0844a90a25f5",
-      measurementId: "G-4Q8DD006NR"
-    };
+  <div class="controls">
+    <button class="control-btn" id="btn-play" title="Play">
+      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <button class="control-btn" id="btn-pause" title="Pausa">
+      <svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+    </button>
+    <button class="control-btn" id="btn-reset" title="Reset">
+      <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+    </button>
+  </div>
 
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const db = getFirestore(app);
+  <div class="stats-container">
+    <div class="stats-title">Sessioni Completate Oggi</div>
+    <div class="session-indicator" id="indicator-span">
+      <span id="session-count">0</span>
+    </div>
+  </div>
+</div>
 
-    let timerInterval = null;
-    let isRunning = false;
-    let currentMode = 'studio';
-    let timeLeft = 25 * 60;
-    let totalDuration = 25 * 60;
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
+import { getFirestore, collection, addDoc, Timestamp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-    const modes = {
-      studio: { name: 'Studio', duration: 25 * 60, accent: '#00F0FF' },
-      shortBreak: { name: 'Pausa Breve', duration: 5 * 60, accent: '#9D4EDD' },
-      longBreak: { name: 'Pausa Lunga', duration: 10 * 60, accent: '#9D4EDD' }
-    };
+const firebaseConfig = {
+  apiKey: "AIzaSyBXt2kDZD8ydWPRBSM9v5XK759Et0FjewY",
+  authDomain: "media-e-proiezione-laurea.firebaseapp.com",
+  databaseURL: "https://media-e-proiezione-laurea-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "media-e-proiezione-laurea",
+  storageBucket: "media-e-proiezione-laurea.firebasestorage.app",
+  messagingSenderId: "887459538992",
+  appId: "1:887459538992:web:0147adda8f0844a90a25f5",
+  measurementId: "G-4Q8DD006NR"
+};
 
-    const timerDisplay = document.getElementById('timer-display');
-    const circle = document.querySelector('.progress-ring__circle');
-    const playBtn = document.getElementById('btn-play');
-    const pauseBtn = document.getElementById('btn-pause');
-    const resetBtn = document.getElementById('btn-reset');
-    const sessionCountSpan = document.getElementById('session-count');
-    const indicatorSpan = document.getElementById('indicator-span');
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const db = getFirestore(app);
 
-    const radius = 85;
-    const circumference = 2 * Math.PI * radius;
+// Chiave locale per il conteggio giornaliero: non dipende da Firestore per essere corretto.
+const STORAGE_KEY = "pomodoro_sessions_today";
 
-    circle.style.strokeDasharray = `${circumference} ${circumference}`;
-    circle.style.strokeDashoffset = 0;
+let timerInterval = null;
+let isRunning = false;
+let currentMode = 'studio';
+let timeLeft = 25 * 60;
+let totalDuration = 25 * 60;
 
-    function setProgress(percent) {
-      const offset = circumference - (percent / 100) * circumference;
-      circle.style.strokeDashoffset = offset;
+const modes = {
+  studio: { name: 'Studio', duration: 25 * 60, accent: '#00F0FF' },
+  shortBreak: { name: 'Pausa Breve', duration: 5 * 60, accent: '#9D4EDD' },
+  longBreak: { name: 'Pausa Lunga', duration: 10 * 60, accent: '#9D4EDD' }
+};
+
+const timerDisplay = document.getElementById('timer-display');
+const circle = document.querySelector('.progress-ring__circle');
+const playBtn = document.getElementById('btn-play');
+const pauseBtn = document.getElementById('btn-pause');
+const resetBtn = document.getElementById('btn-reset');
+const sessionCountSpan = document.getElementById('session-count');
+const indicatorSpan = document.getElementById('indicator-span');
+
+const radius = 85;
+const circumference = 2 * Math.PI * radius;
+
+circle.style.strokeDasharray = `${circumference} ${circumference}`;
+circle.style.strokeDashoffset = 0;
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+function loadSessionsToday() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return 0;
+    const parsed = JSON.parse(raw);
+    if (parsed.date !== todayKey()) return 0;
+    return parsed.count || 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function saveSessionsToday(count) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: todayKey(), count }));
+  } catch (e) {
+    console.error("Impossibile salvare il conteggio locale: ", e);
+  }
+}
+
+function renderSessionCount(count) {
+  sessionCountSpan.textContent = count;
+}
+
+// Incremento GARANTITO e sincrono: avviene sempre al gong, senza dipendere dalla rete o da Firestore.
+function incrementSessionsToday() {
+  const current = loadSessionsToday();
+  const updated = current + 1;
+  saveSessionsToday(updated);
+  renderSessionCount(updated);
+}
+
+function setProgress(percent) {
+  const offset = circumference - (percent / 100) * circumference;
+  circle.style.strokeDashoffset = offset;
+}
+
+function updateProgress() {
+  const percent = (timeLeft / totalDuration) * 100;
+  setProgress(percent);
+}
+
+function updateDisplay() {
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function setMode(modeKey) {
+  clearInterval(timerInterval);
+  isRunning = false;
+  currentMode = modeKey;
+  timeLeft = modes[modeKey].duration;
+  totalDuration = modes[modeKey].duration;
+
+  document.documentElement.style.setProperty('--accent-color', modes[modeKey].accent);
+
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.dataset.mode === modeKey) {
+      btn.classList.add('active');
     }
+  });
 
-    function updateProgress() {
-      const percent = (timeLeft / totalDuration) * 100;
-      setProgress(percent);
-    }
+  circle.classList.add('no-transition');
+  updateDisplay();
+  setProgress(100);
 
-    function updateDisplay() {
-      const minutes = Math.floor(timeLeft / 60);
-      const seconds = timeLeft % 60;
-      timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    }
+  circle.getBoundingClientRect();
+  circle.classList.remove('no-transition');
 
-    function setMode(modeKey) {
-      clearInterval(timerInterval);
-      isRunning = false;
-      currentMode = modeKey;
-      timeLeft = modes[modeKey].duration;
-      totalDuration = modes[modeKey].duration;
-      
-      document.documentElement.style.setProperty('--accent-color', modes[modeKey].accent);
-      
-      document.querySelectorAll('.mode-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.mode === modeKey) {
-          btn.classList.add('active');
-        }
-      });
-      
-      circle.classList.add('no-transition');
+  indicatorSpan.style.color = modes[modeKey].accent;
+  indicatorSpan.style.textShadow = `0 0 6px ${modes[modeKey].accent}`;
+}
+
+function play() {
+  if (isRunning) return;
+  isRunning = true;
+  timerInterval = setInterval(() => {
+    if (timeLeft > 0) {
+      timeLeft--;
       updateDisplay();
-      setProgress(100);
-      
-      circle.getBoundingClientRect(); 
-      circle.classList.remove('no-transition');
-      
-      indicatorSpan.style.color = modes[modeKey].accent;
-      indicatorSpan.style.textShadow = `0 0 6px ${modes[modeKey].accent}`;
-    }
-
-    function play() {
-      if (isRunning) return;
-      isRunning = true;
-      timerInterval = setInterval(() => {
-        if (timeLeft > 0) {
-          timeLeft--;
-          updateDisplay();
-          updateProgress();
-        } else {
-          handleTimerComplete();
-        }
-      }, 1000);
-    }
-
-    function pause() {
-      clearInterval(timerInterval);
-      isRunning = false;
-    }
-
-    function reset() {
-      clearInterval(timerInterval);
-      isRunning = false;
-      timeLeft = totalDuration;
-      circle.classList.add('no-transition');
-      updateDisplay();
-      setProgress(100);
-      circle.getBoundingClientRect();
-      circle.classList.remove('no-transition');
-    }
-
-    function playGong() {
-      try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        const ctx = new AudioContext();
-        const now = ctx.currentTime;
-        
-        const frequencies = [90, 130, 175, 220, 290, 420];
-        const masterGain = ctx.createGain();
-        
-        masterGain.gain.setValueAtTime(0, now);
-        masterGain.gain.linearRampToValueAtTime(0.7, now + 0.08);
-        masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 6.0);
-        
-        const filter = ctx.createBiquadFilter();
-        filter.type = "lowpass";
-        filter.frequency.setValueAtTime(1200, now);
-        filter.frequency.exponentialRampToValueAtTime(180, now + 5.0);
-        
-        frequencies.forEach((freq, idx) => {
-          const osc = ctx.createOscillator();
-          const oscGain = ctx.createGain();
-          
-          osc.type = idx % 2 === 0 ? "sine" : "triangle";
-          osc.frequency.setValueAtTime(freq, now);
-          
-          const lfo = ctx.createOscillator();
-          const lfoGain = ctx.createGain();
-          lfo.frequency.value = 4 + idx;
-          lfoGain.gain.value = 2.0;
-          
-          lfo.connect(lfoGain);
-          lfoGain.connect(osc.frequency);
-          
-          const volume = idx === 0 ? 1.0 : 0.4 / idx;
-          oscGain.gain.setValueAtTime(volume, now);
-          oscGain.gain.exponentialRampToValueAtTime(0.01, now + (5.5 - idx * 0.5));
-          
-          osc.connect(oscGain);
-          oscGain.connect(masterGain);
-          
-          lfo.start(now);
-          osc.start(now);
-          
-          lfo.stop(now + 6.0);
-          osc.stop(now + 6.0);
-        });
-        
-        masterGain.connect(filter);
-        filter.connect(ctx.destination);
-      } catch (err) {
-        console.error("Web Audio API error: ", err);
+      updateProgress();
+      if (timeLeft === 0) {
+        handleTimerComplete();
       }
     }
+  }, 1000);
+}
 
-    async function fetchCompletedSessions() {
-      try {
-        const startOfToday = new Date();
-        startOfToday.setHours(0, 0, 0, 0);
-        
-        const q = query(
-          collection(db, "pomodoro_sessions"),
-          where("timestamp", ">=", Timestamp.fromDate(startOfToday))
-        );
-        
-        const querySnapshot = await getDocs(q);
-        let count = 0;
-        querySnapshot.forEach(() => {
-          count++;
-        });
-        sessionCountSpan.textContent = count;
-      } catch (e) {
-        console.error("Errore durante il recupero dei dati da Firestore: ", e);
-        sessionCountSpan.textContent = "0";
-      }
-    }
+function pause() {
+  clearInterval(timerInterval);
+  isRunning = false;
+}
 
-    async function saveSessionToCloud() {
-      try {
-        await addDoc(collection(db, "pomodoro_sessions"), {
-          type: "Studio",
-          duration: 25,
-          timestamp: Timestamp.now()
-        });
-        fetchCompletedSessions();
-      } catch (e) {
-        console.error("Errore durante il salvataggio su Firestore: ", e);
-        const currentCount = parseInt(sessionCountSpan.textContent) || 0;
-        sessionCountSpan.textContent = currentCount + 1;
-      }
-    }
+function reset() {
+  clearInterval(timerInterval);
+  isRunning = false;
+  timeLeft = totalDuration;
+  circle.classList.add('no-transition');
+  updateDisplay();
+  setProgress(100);
+  circle.getBoundingClientRect();
+  circle.classList.remove('no-transition');
+}
 
-    function handleTimerComplete() {
-      clearInterval(timerInterval);
-      isRunning = false;
-      playGong();
-      
-      if (currentMode === 'studio') {
-        saveSessionToCloud();
-        setMode('shortBreak');
-      } else {
-        setMode('studio');
-      }
-    }
+function playGong() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    const now = ctx.currentTime;
 
-    document.addEventListener("DOMContentLoaded", () => {
-      setMode('studio');
-      
-      document.querySelectorAll('.mode-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          setMode(e.currentTarget.dataset.mode);
-        });
-      });
-      
-      playBtn.addEventListener('click', play);
-      pauseBtn.addEventListener('click', pause);
-      resetBtn.addEventListener('click', reset);
-      
-      fetchCompletedSessions();
+    const frequencies = [90, 130, 175, 220, 290, 420];
+    const masterGain = ctx.createGain();
+
+    masterGain.gain.setValueAtTime(0, now);
+    masterGain.gain.linearRampToValueAtTime(0.7, now + 0.08);
+    masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 6.0);
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(1200, now);
+    filter.frequency.exponentialRampToValueAtTime(180, now + 5.0);
+
+    frequencies.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const oscGain = ctx.createGain();
+
+      osc.type = idx % 2 === 0 ? "sine" : "triangle";
+      osc.frequency.setValueAtTime(freq, now);
+
+      const lfo = ctx.createOscillator();
+      const lfoGain = ctx.createGain();
+      lfo.frequency.value = 4 + idx;
+      lfoGain.gain.value = 2.0;
+
+      lfo.connect(lfoGain);
+      lfoGain.connect(osc.frequency);
+
+      const volume = idx === 0 ? 1.0 : 0.4 / idx;
+      oscGain.gain.setValueAtTime(volume, now);
+      oscGain.gain.exponentialRampToValueAtTime(0.01, now + (5.5 - idx * 0.5));
+
+      osc.connect(oscGain);
+      oscGain.connect(masterGain);
+
+      lfo.start(now);
+      osc.start(now);
+
+      lfo.stop(now + 6.0);
+      osc.stop(now + 6.0);
     });
-  </script>
+
+    masterGain.connect(filter);
+    filter.connect(ctx.destination);
+  } catch (err) {
+    console.error("Web Audio API error: ", err);
+  }
+}
+
+// Log su Firestore: puramente accessorio/storico, NON influisce sul numero mostrato.
+async function logSessionToCloud() {
+  try {
+    await addDoc(collection(db, "pomodoro_sessions"), {
+      type: "Studio",
+      duration: 25,
+      timestamp: Timestamp.now()
+    });
+  } catch (e) {
+    console.error("Log storico su Firestore non riuscito (il conteggio locale non è comunque intaccato): ", e);
+  }
+}
+
+function handleTimerComplete() {
+  clearInterval(timerInterval);
+  isRunning = false;
+  playGong();
+
+  if (currentMode === 'studio') {
+    incrementSessionsToday();
+    logSessionToCloud();
+    setMode('shortBreak');
+  } else {
+    setMode('studio');
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  setMode('studio');
+  renderSessionCount(loadSessionsToday());
+
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      setMode(e.currentTarget.dataset.mode);
+    });
+  });
+
+  playBtn.addEventListener('click', play);
+  pauseBtn.addEventListener('click', pause);
+  resetBtn.addEventListener('click', reset);
+});
+</script>
 </body>
 </html>
