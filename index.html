@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Deep Work Pomodoro Timer</title>
+  <title>Deep Work Pomodoro Timer - Sync</title>
   <style>
     :root {
       --text-color: #ffffff;
@@ -25,15 +25,16 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
       box-sizing: border-box;
+      padding: 10px;
     }
 
     .wrapper {
       background: black;
       border: 2px solid var(--gold-color);
       border-radius: 20px;
-      padding: 30px;
+      padding: 24px;
       width: 330px;
       display: flex;
       flex-direction: column;
@@ -47,7 +48,7 @@
       justify-content: space-between;
       gap: 8px;
       width: 100%;
-      margin-bottom: 25px;
+      margin-bottom: 20px;
     }
 
     .mode-btn {
@@ -77,9 +78,9 @@
 
     .timer-container {
       position: relative;
-      width: 200px;
-      height: 200px;
-      margin-bottom: 25px;
+      width: 180px;
+      height: 180px;
+      margin-bottom: 20px;
     }
 
     .progress-ring {
@@ -112,7 +113,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 2.6rem;
+      font-size: 2.4rem;
       font-weight: 200;
       letter-spacing: 1.5px;
       color: var(--text-color);
@@ -122,12 +123,12 @@
       display: flex;
       justify-content: center;
       gap: 16px;
-      margin-bottom: 25px;
+      margin-bottom: 20px;
     }
 
     .control-btn {
-      width: 42px;
-      height: 42px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       border: 1px solid var(--gold-color);
       background: transparent;
@@ -146,8 +147,8 @@
 
     .control-btn svg {
       fill: currentColor;
-      width: 16px;
-      height: 16px;
+      width: 15px;
+      height: 15px;
     }
 
     .stats-container {
@@ -155,13 +156,14 @@
       flex-direction: column;
       align-items: center;
       font-size: 0.75rem;
+      margin-bottom: 15px;
     }
 
     .stats-title {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       letter-spacing: 1px;
       text-transform: uppercase;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       opacity: 0.5;
     }
 
@@ -172,7 +174,53 @@
       font-size: 1.1rem;
       color: var(--accent-color);
       text-shadow: 0 0 6px var(--accent-color);
-      transition: color 0.3s ease, text-shadow 0.3s ease;
+    }
+
+    .sync-container {
+      margin-top: 10px;
+      padding-top: 15px;
+      border-top: 1px dashed rgba(212, 175, 55, 0.2);
+      width: 100%;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      box-sizing: border-box;
+    }
+
+    #sync-input {
+      flex: 1;
+      background: transparent;
+      border: 1px solid var(--gold-color);
+      border-radius: 8px;
+      color: var(--text-color);
+      font-size: 0.68rem;
+      padding: 6px 8px;
+      outline: none;
+      transition: box-shadow 0.3s ease;
+      min-width: 0;
+    }
+
+    #sync-input:focus {
+      box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+    }
+
+    .sync-btn {
+      background: transparent;
+      border: 1px solid var(--gold-color);
+      color: var(--text-color);
+      border-radius: 8px;
+      font-size: 0.62rem;
+      padding: 6px 8px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .sync-btn:hover {
+      background: rgba(212, 175, 55, 0.15);
     }
   </style>
 </head>
@@ -211,12 +259,18 @@
         <span id="session-count">0</span>
       </div>
     </div>
+
+    <div class="sync-container">
+      <input type="text" id="sync-input" placeholder="User ID per sincronizzazione" />
+      <button class="sync-btn" id="btn-sync-action">Sync</button>
+      <button class="sync-btn" id="btn-sync-gen" title="Genera ID">Genera</button>
+    </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
-    import { getFirestore, collection, addDoc, query, where, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc, query, where, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBXt2kDZD8ydWPRBSM9v5XK759Et0FjewY",
@@ -239,6 +293,13 @@
     let timeLeft = 25 * 60;
     let totalDuration = 25 * 60;
 
+    let syncId = localStorage.getItem('pomodoro_sync_id') || '';
+    let unsubscribeSync = null;
+
+    let syncStartTime = null;
+    let syncDurationLeft = null;
+    let currentSyncState = 'idle'; 
+
     const modes = {
       studio: { name: 'Studio', duration: 25 * 60, accent: '#00F0FF' },
       shortBreak: { name: 'Pausa Breve', duration: 5 * 60, accent: '#9D4EDD' },
@@ -252,6 +313,9 @@
     const resetBtn = document.getElementById('btn-reset');
     const sessionCountSpan = document.getElementById('session-count');
     const indicatorSpan = document.getElementById('indicator-span');
+    const syncInput = document.getElementById('sync-input');
+    const syncActionBtn = document.getElementById('btn-sync-action');
+    const syncGenBtn = document.getElementById('btn-sync-gen');
 
     const radius = 85;
     const circumference = 2 * Math.PI * radius;
@@ -275,8 +339,9 @@
       timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
 
-    function setMode(modeKey) {
+    function setMode(modeKey, localTrigger = true) {
       clearInterval(timerInterval);
+      timerInterval = null;
       isRunning = false;
       currentMode = modeKey;
       timeLeft = modes[modeKey].duration;
@@ -300,36 +365,83 @@
       
       indicatorSpan.style.color = modes[modeKey].accent;
       indicatorSpan.style.textShadow = `0 0 6px ${modes[modeKey].accent}`;
+
+      if (localTrigger && syncId) {
+        updateFirestoreSyncState("idle", timeLeft);
+      }
+    }
+
+    function startLocalInterval() {
+      if (timerInterval) clearInterval(timerInterval);
+      
+      updateDisplay();
+      updateProgress();
+      
+      timerInterval = setInterval(() => {
+        if (currentSyncState === 'running' && syncId) {
+          const elapsedSec = Math.floor((Date.now() - syncStartTime) / 1000);
+          timeLeft = Math.max(0, syncDurationLeft - elapsedSec);
+          
+          if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            isRunning = false;
+            handleTimerComplete();
+          }
+        } else {
+          if (timeLeft > 0) {
+            timeLeft--;
+          } else {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            isRunning = false;
+            handleTimerComplete();
+          }
+        }
+        updateDisplay();
+        updateProgress();
+      }, 1000);
     }
 
     function play() {
       if (isRunning) return;
       isRunning = true;
-      timerInterval = setInterval(() => {
-        if (timeLeft > 0) {
-          timeLeft--;
-          updateDisplay();
-          updateProgress();
-        } else {
-          handleTimerComplete();
-        }
-      }, 1000);
+      
+      if (syncId) {
+        updateFirestoreSyncState("running", timeLeft, Date.now());
+      } else {
+        startLocalInterval();
+      }
     }
 
     function pause() {
-      clearInterval(timerInterval);
       isRunning = false;
+      clearInterval(timerInterval);
+      timerInterval = null;
+      
+      if (syncId) {
+        updateFirestoreSyncState("paused", timeLeft);
+      } else {
+        updateDisplay();
+        updateProgress();
+      }
     }
 
     function reset() {
-      clearInterval(timerInterval);
       isRunning = false;
+      clearInterval(timerInterval);
+      timerInterval = null;
       timeLeft = totalDuration;
-      circle.classList.add('no-transition');
-      updateDisplay();
-      setProgress(100);
-      circle.getBoundingClientRect();
-      circle.classList.remove('no-transition');
+      
+      if (syncId) {
+        updateFirestoreSyncState("idle", timeLeft);
+      } else {
+        circle.classList.add('no-transition');
+        updateDisplay();
+        setProgress(100);
+        circle.getBoundingClientRect();
+        circle.classList.remove('no-transition');
+      }
     }
 
     function playGong() {
@@ -388,12 +500,17 @@
     }
 
     async function fetchCompletedSessions() {
+      if (!syncId) {
+        sessionCountSpan.textContent = "0";
+        return;
+      }
       try {
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
         
         const q = query(
           collection(db, "pomodoro_sessions"),
+          where("syncId", "==", syncId),
           where("timestamp", ">=", Timestamp.fromDate(startOfToday))
         );
         
@@ -410,22 +527,31 @@
     }
 
     async function saveSessionToCloud() {
+      if (!syncId) return;
       try {
-        await addDoc(collection(db, "pomodoro_sessions"), {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const date = now.getDate();
+        const hour = now.getHours();
+        const minute = now.getMinutes();
+        const docId = `${syncId}_${year}-${month}-${date}_${hour}-${minute}`;
+        
+        await setDoc(doc(db, "pomodoro_sessions", docId), {
           type: "Studio",
           duration: 25,
-          timestamp: Timestamp.now()
+          timestamp: Timestamp.now(),
+          syncId: syncId
         });
         fetchCompletedSessions();
       } catch (e) {
         console.error("Errore durante il salvataggio su Firestore: ", e);
-        const currentCount = parseInt(sessionCountSpan.textContent) || 0;
-        sessionCountSpan.textContent = currentCount + 1;
       }
     }
 
     function handleTimerComplete() {
       clearInterval(timerInterval);
+      timerInterval = null;
       isRunning = false;
       playGong();
       
@@ -437,8 +563,79 @@
       }
     }
 
+    async function updateFirestoreSyncState(state, duration, startTime = null) {
+      if (!syncId) return;
+      try {
+        const docRef = doc(db, "timer_syncs", syncId);
+        await setDoc(docRef, {
+          timerState: state,
+          startTime: startTime || Date.now(),
+          durationLeft: duration,
+          lastUpdated: Date.now(),
+          currentMode: currentMode
+        });
+      } catch (e) {
+        console.error("Errore durante l'aggiornamento dello stato Firestore: ", e);
+      }
+    }
+
+    function applySyncedState(data) {
+      if (data.currentMode && data.currentMode !== currentMode) {
+        setMode(data.currentMode, false);
+      }
+
+      currentSyncState = data.timerState;
+
+      if (data.timerState === "running") {
+        syncStartTime = data.startTime;
+        syncDurationLeft = data.durationLeft;
+        isRunning = true;
+        
+        const elapsedSec = Math.floor((Date.now() - syncStartTime) / 1000);
+        timeLeft = Math.max(0, syncDurationLeft - elapsedSec);
+        
+        startLocalInterval();
+      } else if (data.timerState === "paused") {
+        isRunning = false;
+        clearInterval(timerInterval);
+        timerInterval = null;
+        timeLeft = data.durationLeft;
+        updateDisplay();
+        updateProgress();
+      } else if (data.timerState === "idle") {
+        isRunning = false;
+        clearInterval(timerInterval);
+        timerInterval = null;
+        timeLeft = data.durationLeft;
+        updateDisplay();
+        updateProgress();
+      }
+    }
+
+    function setupSync(id) {
+      if (unsubscribeSync) unsubscribeSync();
+      if (!id) return;
+      
+      unsubscribeSync = onSnapshot(doc(db, "timer_syncs", id), (docSnap) => {
+        if (docSnap.metadata.hasPendingWrites) return; 
+        if (!docSnap.exists()) return;
+        
+        const data = docSnap.data();
+        applySyncedState(data);
+      });
+    }
+
+    function generateSyncId() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let result = '';
+      for (let i = 0; i < 6; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
-      setMode('studio');
+      setMode('studio', false);
       
       document.querySelectorAll('.mode-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -449,8 +646,34 @@
       playBtn.addEventListener('click', play);
       pauseBtn.addEventListener('click', pause);
       resetBtn.addEventListener('click', reset);
-      
-      fetchCompletedSessions();
+
+      if (syncId) {
+        syncInput.value = syncId;
+        setupSync(syncId);
+        fetchCompletedSessions();
+      }
+
+      syncActionBtn.addEventListener('click', () => {
+        const val = syncInput.value.trim().toUpperCase();
+        if (val) {
+          syncId = val;
+          localStorage.setItem('pomodoro_sync_id', syncId);
+          setupSync(syncId);
+          fetchCompletedSessions();
+        } else {
+          syncId = '';
+          localStorage.removeItem('pomodoro_sync_id');
+          if (unsubscribeSync) unsubscribeSync();
+          unsubscribeSync = null;
+          sessionCountSpan.textContent = "0";
+        }
+      });
+
+      syncGenBtn.addEventListener('click', () => {
+        const newId = generateSyncId();
+        syncInput.value = newId;
+        syncActionBtn.click();
+      });
     });
   </script>
 </body>
