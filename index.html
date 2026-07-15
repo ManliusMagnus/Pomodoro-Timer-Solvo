@@ -203,18 +203,20 @@ body {
   font-size: 0.62rem;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  opacity: 0.45;
+  opacity: 0.7;
   display: flex;
   align-items: center;
   gap: 5px;
+  transition: opacity 0.3s ease;
 }
 
 .sync-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #2ecc71;
-  box-shadow: 0 0 5px #2ecc71;
+  background: #f1c40f;
+  box-shadow: 0 0 5px #f1c40f;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 </style>
 </head>
@@ -252,7 +254,7 @@ body {
     <div class="session-indicator" id="session-indicator">
       <span class="session-count-fallback" id="session-count">0</span>
     </div>
-    <div class="sync-status"><span class="sync-dot"></span><span>Sincronizzato su tutti i dispositivi</span></div>
+    <div class="sync-status"><span class="sync-dot" id="sync-dot"></span><span id="sync-text">Connessione in corso…</span></div>
   </div>
 </div>
 
@@ -260,7 +262,7 @@ body {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
 import {
-  getFirestore,
+  initializeFirestore,
   doc,
   setDoc,
   addDoc,
@@ -284,7 +286,15 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
-const db = getFirestore(app);
+
+// Forza il long-polling automatico: molti webview "in-app" (incluso quello
+// dell'app Notion su mobile) bloccano o interrompono i WebSocket persistenti,
+// che è il trasporto realtime di default di Firestore. Questo fallback
+// garantisce che la sincronizzazione funzioni anche dentro quei contenitori.
+const db = initializeFirestore(app, {
+  experimentalAutoDetectLongPolling: true,
+  useFetchStreams: false
+});
 
 // ID fisso e condiviso: garantisce che qualsiasi dispositivo che apre questo
 // embed legga/scriva sempre lo stesso documento Firestore, senza bisogno di
@@ -314,12 +324,31 @@ const pauseBtn = document.getElementById('btn-pause');
 const resetBtn = document.getElementById('btn-reset');
 const sessionIndicator = document.getElementById('session-indicator');
 const sessionCountSpan = document.getElementById('session-count');
+const syncDotEl = document.getElementById('sync-dot');
+const syncTextEl = document.getElementById('sync-text');
 
 const radius = 85;
 const circumference = 2 * Math.PI * radius;
 
 circle.style.strokeDasharray = `${circumference} ${circumference}`;
 circle.style.strokeDashoffset = 0;
+
+function setSyncStatus(state) {
+  // state: 'connecting' | 'connected' | 'error'
+  if (state === 'connected') {
+    syncDotEl.style.background = '#2ecc71';
+    syncDotEl.style.boxShadow = '0 0 5px #2ecc71';
+    syncTextEl.textContent = 'Sincronizzato su tutti i dispositivi';
+  } else if (state === 'error') {
+    syncDotEl.style.background = '#e74c3c';
+    syncDotEl.style.boxShadow = '0 0 5px #e74c3c';
+    syncTextEl.textContent = 'Connessione non riuscita';
+  } else {
+    syncDotEl.style.background = '#f1c40f';
+    syncDotEl.style.boxShadow = '0 0 5px #f1c40f';
+    syncTextEl.textContent = 'Connessione in corso…';
+  }
+}
 
 function setProgress(percent) {
   const offset = circumference - (percent / 100) * circumference;
@@ -541,6 +570,7 @@ async function updateFirestoreSyncState(state, duration, startTime = null) {
     });
   } catch (e) {
     console.error("Errore durante l'aggiornamento dello stato Firestore: ", e);
+    setSyncStatus('error');
   }
 }
 
@@ -575,12 +605,14 @@ function applySyncedState(data) {
 }
 
 function setupSync() {
+  setSyncStatus('connecting');
   onSnapshot(doc(db, "timer_syncs", SYNC_ID), (docSnap) => {
+    setSyncStatus('connected');
     if (!docSnap.exists()) return;
-    const data = docSnap.data();
-    applySyncedState(data);
+    applySyncedState(docSnap.data());
   }, (e) => {
     console.error("Errore durante la sincronizzazione con Firestore: ", e);
+    setSyncStatus('error');
   });
 }
 
